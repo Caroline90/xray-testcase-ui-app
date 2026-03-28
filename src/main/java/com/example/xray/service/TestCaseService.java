@@ -33,7 +33,9 @@ public class TestCaseService {
 
         csv.writeNext(new String[]{
                 "Test ID","Issue Key","Issue Type","Summary",
-                "Test Type","Component","Action","Data","Result","Precondition"
+                "Description","Test Type","Component","Labels",
+                "Affects Version/s","Fix Version/s","Execute In",
+                "Action","Data","Result","Precondition"
         });
 
         int id = 1;
@@ -45,14 +47,15 @@ public class TestCaseService {
                 if (first) {
                     csv.writeNext(new String[]{
                             String.valueOf(id),"","Test",tc.getSummary(),
-                            tc.getTestType(),tc.getComponent(),
+                            tc.getDescription(),tc.getTestType(),tc.getComponent(),tc.getLabels(),
+                            tc.getAffectedVersion(),tc.getFixVersion(),tc.getExecuteIn(),
                             s.getAction(),s.getData(),s.getExpected(),
                             tc.getPrecondition()
                     });
                     first = false;
                 } else {
                     csv.writeNext(new String[]{
-                            String.valueOf(id),"","","","","",
+                            String.valueOf(id),"","","","","","","","","",
                             s.getAction(),s.getData(),s.getExpected(),""
                     });
                 }
@@ -74,20 +77,38 @@ public class TestCaseService {
         for (int i = 1; i < rows.size(); i++) {
             String[] r = rows.get(i);
             String id = r[0];
+            boolean hasExtendedColumns = r.length >= 15;
 
             TestCase tc = map.computeIfAbsent(id, k -> {
                 TestCase t = new TestCase();
                 t.setSummary(r[3]);
-                t.setTestType(r[4]);
-                t.setComponent(r[5]);
-                t.setPrecondition(r[9]);
+                if (hasExtendedColumns) {
+                    t.setDescription(r[4]);
+                    t.setTestType(r[5]);
+                    t.setComponent(r[6]);
+                    t.setLabels(r[7]);
+                    t.setAffectedVersion(r[8]);
+                    t.setFixVersion(r[9]);
+                    t.setExecuteIn(r[10]);
+                    t.setPrecondition(r[14]);
+                } else {
+                    t.setTestType(r[4]);
+                    t.setComponent(r[5]);
+                    t.setPrecondition(r[9]);
+                }
                 return t;
             });
 
             TestStep s = new TestStep();
-            s.setAction(r[6]);
-            s.setData(r[7]);
-            s.setExpected(r[8]);
+            if (hasExtendedColumns) {
+                s.setAction(r[11]);
+                s.setData(r[12]);
+                s.setExpected(r[13]);
+            } else {
+                s.setAction(r[6]);
+                s.setData(r[7]);
+                s.setExpected(r[8]);
+            }
 
             tc.addStep(s);
         }
@@ -108,6 +129,7 @@ public class TestCaseService {
             String[] r = rows.get(i);
 
             try {
+                boolean hasExtendedColumns = r.length >= 15;
                 if (r.length < 10) {
                     result.getErrors().add("Row " + (i+1) + ": invalid column count");
                     continue;
@@ -118,22 +140,34 @@ public class TestCaseService {
                 TestCase tc = map.computeIfAbsent(id, k -> {
                     TestCase t = new TestCase();
                     t.setSummary(r[3]);
-                    t.setTestType(r[4]);
-                    t.setComponent(r[5]);
-                    t.setPrecondition(r[9]);
+                    if (hasExtendedColumns) {
+                        t.setDescription(r[4]);
+                        t.setTestType(r[5]);
+                        t.setComponent(r[6]);
+                        t.setLabels(r[7]);
+                        t.setAffectedVersion(r[8]);
+                        t.setFixVersion(r[9]);
+                        t.setExecuteIn(r[10]);
+                        t.setPrecondition(r[14]);
+                    } else {
+                        t.setTestType(r[4]);
+                        t.setComponent(r[5]);
+                        t.setPrecondition(r[9]);
+                    }
                     return t;
                 });
 
                 TestStep s = new TestStep();
 
-                if (r[6] == null || r[6].isBlank()) {
+                String action = hasExtendedColumns ? r[11] : r[6];
+                if (action == null || action.isBlank()) {
                     result.getErrors().add("Row " + (i+1) + ": missing action");
                     continue;
                 }
 
-                s.setAction(r[6]);
-                s.setData(r[7]);
-                s.setExpected(r[8]);
+                s.setAction(action);
+                s.setData(hasExtendedColumns ? r[12] : r[7]);
+                s.setExpected(hasExtendedColumns ? r[13] : r[8]);
 
                 tc.addStep(s);
 

@@ -110,6 +110,24 @@
             border-bottom: 1px solid #eee;
         }
 
+        .import-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        #file {
+            display: none;
+        }
+
+        #selectedFileName {
+            color: #555;
+            font-size: 13px;
+            min-width: 180px;
+        }
+
         /* Toast */
         #toast {
             position: fixed;
@@ -134,8 +152,12 @@
     <div class="card">
         <h2>📋 Test Cases</h2>
         <button class="secondary" onclick="exportCsv()">Export</button>
-        <input type="file" id="file">
-        <button class="secondary" onclick="importCsv()">Import</button>
+        <div class="import-controls">
+            <input type="file" id="file" accept=".csv,text/csv">
+            <button class="secondary" onclick="browseCsv()">Browse CSV from PC</button>
+            <span id="selectedFileName">No file selected</span>
+            <button id="importBtn" class="secondary" onclick="importCsv()" disabled>Import</button>
+        </div>
     </div>
 
     <div class="card">
@@ -316,14 +338,37 @@
 
     function exportCsv(){ window.location='/api/testcases/export'; }
 
+    function browseCsv(){
+        file.click();
+    }
+
+    file.addEventListener('change', ()=>{
+        const selected=file.files[0];
+        selectedFileName.innerText=selected?selected.name:'No file selected';
+        importBtn.disabled=!selected;
+    });
+
     function importCsv(){
         const f=file.files[0];
+        if(!f){
+            toast("Please choose a CSV file first");
+            return;
+        }
+
         const fd=new FormData();
         fd.append('file',f);
 
         fetch('/api/testcases/import',{method:'POST',body:fd})
-            .then(r=>r.json())
+            .then(r=>{
+                if(!r.ok) throw new Error('Import failed');
+                return r.json();
+            })
             .then(d=>{
+                if(!d.length){
+                    toast("No test case found in file");
+                    return;
+                }
+
                 const tc=d[0];
                 summary.value=tc.summary;
                 pre.value=tc.precondition;
@@ -333,7 +378,8 @@
                     .forEach(s=>addRow(s.action,s.data,s.expected));
 
                 toast("Imported");
-            });
+            })
+            .catch(()=>toast("Import failed. Please check the CSV format."));
     }
 
     addRow();

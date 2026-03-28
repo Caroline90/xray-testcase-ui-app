@@ -10,6 +10,9 @@
             --secondary:#2196F3;
             --danger:#f44336;
             --bg:#f5f7fa;
+            --text:#1f2937;
+            --muted:#6b7280;
+            --line:#e5e7eb;
         }
 
         body {
@@ -29,15 +32,34 @@
             margin-bottom:20px;
         }
 
+        .editor-head {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            margin-bottom:8px;
+        }
+
+        .editor-subtitle {
+            color:var(--muted);
+            font-size:14px;
+            margin:0 0 14px;
+        }
+
         input, select {
             width:100%;
-            padding:10px;
+            padding:11px 12px;
             margin-bottom:10px;
             border-radius:8px;
             border:1px solid #ddd;
+            font-size:15px;
+            box-sizing:border-box;
         }
 
-        input:focus { border-color:#2196F3; }
+        input:focus, select:focus {
+            border-color:#2196F3;
+            box-shadow:0 0 0 3px rgba(33,150,243,.15);
+            outline:none;
+        }
 
         button {
             padding:8px 12px;
@@ -51,9 +73,73 @@
         .secondary { background:#2196F3; }
         .danger { background:#f44336; }
 
-        table { width:100%; border-collapse:separate; border-spacing:0 6px; }
-        td { background:white; padding:6px; }
-        .step-number { text-align:center; font-weight:bold; }
+        .primary:hover { background:#3f9743; }
+        .secondary:hover { background:#1f82d3; }
+        .danger:hover { background:#df3a2f; }
+
+        .table-wrap {
+            border:1px solid var(--line);
+            border-radius:10px;
+            overflow:hidden;
+            background:#fff;
+            margin-top:10px;
+        }
+
+        table {
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        thead {
+            background:#f8fafc;
+        }
+
+        th {
+            color:var(--text);
+            font-size:13px;
+            text-transform:uppercase;
+            letter-spacing:.04em;
+            font-weight:700;
+            padding:12px 10px;
+            border-bottom:1px solid var(--line);
+        }
+
+        td {
+            padding:8px 10px;
+            border-bottom:1px solid #f0f2f5;
+            vertical-align:middle;
+        }
+
+        #steps tbody tr:last-child td {
+            border-bottom:none;
+        }
+
+        #steps tbody tr:hover {
+            background:#fafcff;
+        }
+
+        .step-number {
+            text-align:center;
+            font-weight:700;
+            color:#111827;
+            width:42px;
+        }
+
+        .step-delete {
+            text-align:center;
+            width:70px;
+        }
+
+        #steps tbody input {
+            margin-bottom:0;
+            background:#fff;
+        }
+
+        .editor-actions {
+            display:flex;
+            gap:8px;
+            margin-top:14px;
+        }
 
         .list-item {
             display:flex;
@@ -81,6 +167,13 @@
             padding:10px;
             margin-bottom:10px;
             border-radius:8px;
+        }
+
+        @media (max-width: 820px) {
+            .container { padding: 0 4px; }
+            .card { padding:14px; }
+            th:nth-child(3), td:nth-child(3) { display:none; }
+            .editor-actions { flex-wrap:wrap; }
         }
     </style>
 </head>
@@ -110,7 +203,10 @@
 
     <!-- EDITOR -->
     <div class="card">
-        <h2>✏️ Editor</h2>
+        <div class="editor-head">
+            <h2>✏️ Editor</h2>
+        </div>
+        <p class="editor-subtitle">Clean, compact steps grid with better readability.</p>
 
         <input id="id" type="hidden">
         <input id="summary" placeholder="Summary">
@@ -123,18 +219,21 @@
 
         <input id="component" placeholder="Component">
 
-        <table id="steps">
-            <thead>
-            <tr>
-                <th>#</th><th>Action</th><th>Data</th><th>Expected</th><th></th>
-            </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div class="table-wrap">
+            <table id="steps">
+                <thead>
+                <tr>
+                    <th>#</th><th>Action</th><th>Data</th><th>Expected</th><th></th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
 
-        <br>
-        <button class="primary" onclick="addRow()">+ Step</button>
-        <button class="secondary" onclick="save()">💾 Save</button>
+        <div class="editor-actions">
+            <button class="primary" onclick="addRow()">+ Step</button>
+            <button class="secondary" onclick="save()">💾 Save</button>
+        </div>
 
     </div>
 
@@ -163,7 +262,7 @@
     <td><input value="${a}"></td>
     <td><input value="${d}"></td>
     <td><input value="${e}"></td>
-    <td><button class="danger" onclick="removeRow(this)">X</button></td>`;
+    <td class="step-delete"><button class="danger" onclick="removeRow(this)">✕</button></td>`;
         document.querySelector('#steps tbody').appendChild(tr);
         update();
     }

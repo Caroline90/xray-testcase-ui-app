@@ -1,5 +1,6 @@
 package com.example.xray.service;
 
+import com.example.xray.controller.ImportResult;
 import com.example.xray.model.*;
 import com.example.xray.repository.TestCaseRepository;
 import com.opencsv.*;
@@ -92,5 +93,56 @@ public class TestCaseService {
         }
 
         return new ArrayList<>(map.values());
+    }
+
+    public ImportResult importCsvWithValidation(InputStream input) throws Exception {
+
+        ImportResult result = new ImportResult();
+
+        CSVReader reader = new CSVReader(new InputStreamReader(input));
+        List<String[]> rows = reader.readAll();
+
+        Map<String, TestCase> map = new LinkedHashMap<>();
+
+        for (int i = 1; i < rows.size(); i++) {
+            String[] r = rows.get(i);
+
+            try {
+                if (r.length < 10) {
+                    result.getErrors().add("Row " + (i+1) + ": invalid column count");
+                    continue;
+                }
+
+                String id = r[0];
+
+                TestCase tc = map.computeIfAbsent(id, k -> {
+                    TestCase t = new TestCase();
+                    t.setSummary(r[3]);
+                    t.setTestType(r[4]);
+                    t.setComponent(r[5]);
+                    t.setPrecondition(r[9]);
+                    return t;
+                });
+
+                TestStep s = new TestStep();
+
+                if (r[6] == null || r[6].isBlank()) {
+                    result.getErrors().add("Row " + (i+1) + ": missing action");
+                    continue;
+                }
+
+                s.setAction(r[6]);
+                s.setData(r[7]);
+                s.setExpected(r[8]);
+
+                tc.addStep(s);
+
+            } catch (Exception e) {
+                result.getErrors().add("Row " + (i+1) + ": " + e.getMessage());
+            }
+        }
+
+        result.getTestCases().addAll(map.values());
+        return result;
     }
 }

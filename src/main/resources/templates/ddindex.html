@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Xray Test Builder</title>
+
+    <style>
+        :root {
+            --primary:#4CAF50;
+            --secondary:#2196F3;
+            --danger:#f44336;
+            --bg:#f5f7fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial;
+            background: var(--bg);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-weight: 600;
+        }
+
+        /* Inputs */
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            transition: 0.2s;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 2px rgba(33,150,243,0.2);
+            outline: none;
+        }
+
+        input.error {
+            border: 2px solid var(--danger);
+        }
+
+        /* Buttons */
+        button {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            font-weight: 500;
+        }
+
+        .primary { background: var(--primary); }
+        .secondary { background: var(--secondary); }
+        .danger { background: var(--danger); }
+
+        button:hover { opacity: 0.9; }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 6px;
+        }
+
+        th {
+            text-align: left;
+            color: #555;
+            font-size: 13px;
+        }
+
+        td {
+            background: white;
+            padding: 6px;
+        }
+
+        #steps input {
+            height: 36px;
+        }
+
+        .step-number {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* List */
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Toast */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            opacity: 0;
+            transition: 0.3s;
+        }
+        #toast.show { opacity: 1; }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+        <h2>📋 Test Cases</h2>
+        <button class="secondary" onclick="exportCsv()">Export</button>
+        <input type="file" id="file">
+        <button class="secondary" onclick="importCsv()">Import</button>
+    </div>
+
+    <div class="card">
+        <h2>✏️ Create / Edit</h2>
+
+        <input id="id" type="hidden">
+
+        <input id="summary" placeholder="Test Summary">
+        <input id="pre" placeholder="Precondition">
+
+        <select id="testType">
+            <option>Manual</option>
+            <option>Automated</option>
+        </select>
+
+        <input id="component" placeholder="Component">
+
+        <table id="steps">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Action</th>
+                <th>Data</th>
+                <th>Expected</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <br>
+
+        <button class="primary" onclick="addRow()">+ Step</button>
+        <button class="secondary" onclick="save()">💾 Save</button>
+
+    </div>
+
+    <div class="card">
+        <h2>📦 Saved</h2>
+        <div id="list"></div>
+    </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+    function toast(msg){
+        const t=document.getElementById('toast');
+        t.innerText=msg;
+        t.classList.add('show');
+        setTimeout(()=>t.classList.remove('show'),2000);
+    }
+
+    function addRow(a='',d='',e=''){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+    <td class="step-number"></td>
+    <td><input value="${a}" placeholder="Action"></td>
+    <td><input value="${d}" placeholder="Data"></td>
+    <td><input value="${e}" placeholder="Expected"></td>
+    <td><button class="danger" onclick="removeRow(this)">✕</button></td>`;
+        document.querySelector('#steps tbody').appendChild(tr);
+        update();
+    }
+
+    function removeRow(btn){
+        btn.closest('tr').remove();
+        update();
+    }
+
+    function update(){
+        document.querySelectorAll('.step-number')
+            .forEach((x,i)=>x.innerText=i+1);
+    }
+
+    function collect(){
+        return {
+            id:id.value||null,
+            summary:summary.value.trim(),
+            precondition:pre.value.trim(),
+            testType:testType.value,
+            component:component.value,
+            steps:[...document.querySelectorAll('#steps tbody tr')]
+                .map(r=>{
+                    const i=r.querySelectorAll('input');
+                    return {
+                        action:i[0].value.trim(),
+                        data:i[1].value.trim(),
+                        expected:i[2].value.trim()
+                    };
+                })
+                .filter(s=>s.action||s.expected)
+        };
+    }
+
+    function validate(d){
+        let ok=true;
+        document.querySelectorAll('input').forEach(i=>i.classList.remove('error'));
+
+        if(!d.summary){
+            summary.classList.add('error');
+            ok=false;
+        }
+
+        d.steps.forEach((s,i)=>{
+            if(!s.action||!s.expected){
+                const row=document.querySelectorAll('#steps tbody tr')[i];
+                row.querySelectorAll('input')[0].classList.add('error');
+                row.querySelectorAll('input')[2].classList.add('error');
+                ok=false;
+            }
+        });
+
+        if(!ok) toast("Fix highlighted fields");
+        return ok;
+    }
+
+    function save(){
+        const d=collect();
+        if(!validate(d)) return;
+
+        fetch('/api/testcases'+(d.id?'/'+d.id:''),{
+            method:d.id?'PUT':'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(d)
+        })
+            .then(()=>{ toast("Saved"); load(); resetForm(); });
+    }
+
+    function load(){
+        fetch('/api/testcases')
+            .then(r=>r.json())
+            .then(list=>{
+                const c=document.getElementById('list');
+                c.innerHTML='';
+
+                list.forEach(tc=>{
+                    const div=document.createElement('div');
+                    div.className='list-item';
+                    div.innerHTML=`
+          <span>${tc.summary} (${tc.steps.length})</span>
+          <span>
+            <button class="secondary" onclick="edit(${tc.id})">Edit</button>
+            <button class="danger" onclick="del(${tc.id})">Delete</button>
+          </span>`;
+                    c.appendChild(div);
+                });
+            });
+    }
+
+    function edit(idVal){
+        fetch('/api/testcases')
+            .then(r=>r.json())
+            .then(list=>{
+                const tc=list.find(x=>x.id===idVal);
+                id.value=tc.id;
+                summary.value=tc.summary;
+                pre.value=tc.precondition;
+                testType.value=tc.testType;
+                component.value=tc.component;
+
+                document.querySelector('#steps tbody').innerHTML='';
+                tc.steps.forEach(s=>addRow(s.action,s.data,s.expected));
+            });
+    }
+
+    function del(idVal){
+        fetch('/api/testcases/'+idVal,{method:'DELETE'})
+            .then(()=>{ toast("Deleted"); load(); });
+    }
+
+    function resetForm(){
+        id.value=''; summary.value=''; pre.value=''; component.value='';
+        document.querySelector('#steps tbody').innerHTML='';
+        addRow();
+    }
+
+    function exportCsv(){ window.location='/api/testcases/export'; }
+
+    function importCsv(){
+        const input = document.getElementById('file');
+        const f = input.files[0];
+
+        // ✅ 1. Validate file selected
+        if(!f){
+            toast("Please select a file");
+            return;
+        }
+
+        // ✅ 2. Validate file type
+        if(!f.name.endsWith('.csv')){
+            toast("Only CSV files allowed");
+            return;
+        }
+
+        const fd = new FormData();
+        fd.append('file', f);
+
+        fetch('/api/testcases/import', {
+            method: 'POST',
+            body: fd
+        })
+            .then(r => {
+                if(!r.ok) throw new Error("Import failed");
+                return r.json();
+            })
+            .then(data => {
+
+                if(!data.length){
+                    toast("No test cases found in file");
+                    return;
+                }
+
+                const tc = data[0];
+
+                // ✅ Always use getElementById (avoid bugs)
+                document.getElementById('summary').value = tc.summary || '';
+                document.getElementById('pre').value = tc.precondition || '';
+
+                const tbody = document.querySelector('#steps tbody');
+                tbody.innerHTML = '';
+
+                // ✅ Filter empty steps safely
+                (tc.steps || [])
+                    .filter(s => s.action || s.expected)
+                    .forEach(s => addRow(s.action, s.data, s.expected));
+
+                toast("Import successful");
+
+                // ✅ Reset file input (important UX fix)
+                input.value = '';
+
+            })
+            .catch(err => {
+                console.error(err);
+                toast("Import error");
+            });
+    }
+
+    addRow();
+    load();
+</script>
+
+</body>
+</html>

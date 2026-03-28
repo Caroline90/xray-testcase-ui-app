@@ -19,129 +19,69 @@
             padding: 20px;
         }
 
-        .container {
-            max-width: 1100px;
-            margin: auto;
-        }
+        .container { max-width: 1100px; margin:auto; }
 
         .card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
+            background:white;
+            padding:20px;
+            border-radius:12px;
+            box-shadow:0 6px 18px rgba(0,0,0,0.08);
+            margin-bottom:20px;
         }
 
-        h2 {
-            margin-top: 0;
-            font-weight: 600;
-        }
-
-        /* Inputs */
         input, select {
-            width: 100%;
-            padding: 10px 12px;
-            margin-bottom: 12px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            font-size: 14px;
-            transition: 0.2s;
-            box-sizing: border-box;
+            width:100%;
+            padding:10px;
+            margin-bottom:10px;
+            border-radius:8px;
+            border:1px solid #ddd;
         }
 
-        input:focus, select:focus {
-            border-color: var(--secondary);
-            box-shadow: 0 0 0 2px rgba(33,150,243,0.2);
-            outline: none;
-        }
+        input:focus { border-color:#2196F3; }
 
-        input.error {
-            border: 2px solid var(--danger);
-        }
-
-        /* Buttons */
         button {
-            padding: 8px 14px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            color: white;
-            font-weight: 500;
+            padding:8px 12px;
+            border:none;
+            border-radius:8px;
+            color:white;
+            cursor:pointer;
         }
 
-        .primary { background: var(--primary); }
-        .secondary { background: var(--secondary); }
-        .danger { background: var(--danger); }
+        .primary { background:#4CAF50; }
+        .secondary { background:#2196F3; }
+        .danger { background:#f44336; }
 
-        button:hover { opacity: 0.9; }
+        table { width:100%; border-collapse:separate; border-spacing:0 6px; }
+        td { background:white; padding:6px; }
+        .step-number { text-align:center; font-weight:bold; }
 
-        /* Table */
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 6px;
-        }
-
-        th {
-            text-align: left;
-            color: #555;
-            font-size: 13px;
-        }
-
-        td {
-            background: white;
-            padding: 6px;
-        }
-
-        #steps input {
-            height: 36px;
-        }
-
-        .step-number {
-            text-align: center;
-            font-weight: bold;
-        }
-
-        /* List */
         .list-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            display:flex;
+            justify-content:space-between;
+            padding:10px;
+            border-bottom:1px solid #eee;
         }
 
-        .import-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 12px;
-        }
-
-        #file {
-            display: none;
-        }
-
-        #selectedFileName {
-            color: #555;
-            font-size: 13px;
-            min-width: 180px;
-        }
-
-        /* Toast */
         #toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #333;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 6px;
-            opacity: 0;
-            transition: 0.3s;
+            position:fixed;
+            bottom:20px;
+            right:20px;
+            background:#333;
+            color:white;
+            padding:10px;
+            border-radius:6px;
+            opacity:0;
         }
-        #toast.show { opacity: 1; }
+        #toast.show { opacity:1; }
 
+        .error { color:red; }
+
+        .preview-box {
+            border:1px solid #ddd;
+            padding:10px;
+            margin-bottom:10px;
+            border-radius:8px;
+        }
     </style>
 </head>
 
@@ -149,23 +89,31 @@
 
 <div class="container">
 
+    <!-- IMPORT -->
     <div class="card">
-        <h2>📋 Test Cases</h2>
-        <button class="secondary" onclick="exportCsv()">Export</button>
-        <div class="import-controls">
-            <input type="file" id="file" accept=".csv,text/csv">
-            <button class="secondary" onclick="browseCsv()">Browse CSV from PC</button>
-            <span id="selectedFileName">No file selected</span>
-            <button id="importBtn" class="secondary" onclick="importCsv()" disabled>Import</button>
-        </div>
+        <h2>📂 Import CSV</h2>
+        <input type="file" id="file">
+        <button class="secondary" onclick="importCsv()">Preview Import</button>
     </div>
 
+    <!-- ERRORS -->
     <div class="card">
-        <h2>✏️ Create / Edit</h2>
+        <h3>⚠️ Errors</h3>
+        <ul id="errors"></ul>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="card">
+        <h3>👀 Preview</h3>
+        <div id="preview"></div>
+    </div>
+
+    <!-- EDITOR -->
+    <div class="card">
+        <h2>✏️ Editor</h2>
 
         <input id="id" type="hidden">
-
-        <input id="summary" placeholder="Test Summary">
+        <input id="summary" placeholder="Summary">
         <input id="pre" placeholder="Precondition">
 
         <select id="testType">
@@ -178,23 +126,19 @@
         <table id="steps">
             <thead>
             <tr>
-                <th>#</th>
-                <th>Action</th>
-                <th>Data</th>
-                <th>Expected</th>
-                <th></th>
+                <th>#</th><th>Action</th><th>Data</th><th>Expected</th><th></th>
             </tr>
             </thead>
             <tbody></tbody>
         </table>
 
         <br>
-
         <button class="primary" onclick="addRow()">+ Step</button>
         <button class="secondary" onclick="save()">💾 Save</button>
 
     </div>
 
+    <!-- LIST -->
     <div class="card">
         <h2>📦 Saved</h2>
         <div id="list"></div>
@@ -216,10 +160,10 @@
         const tr=document.createElement('tr');
         tr.innerHTML=`
     <td class="step-number"></td>
-    <td><input value="${a}" placeholder="Action"></td>
-    <td><input value="${d}" placeholder="Data"></td>
-    <td><input value="${e}" placeholder="Expected"></td>
-    <td><button class="danger" onclick="removeRow(this)">✕</button></td>`;
+    <td><input value="${a}"></td>
+    <td><input value="${d}"></td>
+    <td><input value="${e}"></td>
+    <td><button class="danger" onclick="removeRow(this)">X</button></td>`;
         document.querySelector('#steps tbody').appendChild(tr);
         update();
     }
@@ -230,55 +174,30 @@
     }
 
     function update(){
-        document.querySelectorAll('.step-number')
-            .forEach((x,i)=>x.innerText=i+1);
+        document.querySelectorAll('.step-number').forEach((x,i)=>x.innerText=i+1);
     }
 
     function collect(){
         return {
             id:id.value||null,
-            summary:summary.value.trim(),
-            precondition:pre.value.trim(),
+            summary:summary.value,
+            precondition:pre.value,
             testType:testType.value,
             component:component.value,
             steps:[...document.querySelectorAll('#steps tbody tr')]
                 .map(r=>{
                     const i=r.querySelectorAll('input');
                     return {
-                        action:i[0].value.trim(),
-                        data:i[1].value.trim(),
-                        expected:i[2].value.trim()
+                        action:i[0].value,
+                        data:i[1].value,
+                        expected:i[2].value
                     };
-                })
-                .filter(s=>s.action||s.expected)
+                }).filter(s=>s.action||s.expected)
         };
-    }
-
-    function validate(d){
-        let ok=true;
-        document.querySelectorAll('input').forEach(i=>i.classList.remove('error'));
-
-        if(!d.summary){
-            summary.classList.add('error');
-            ok=false;
-        }
-
-        d.steps.forEach((s,i)=>{
-            if(!s.action||!s.expected){
-                const row=document.querySelectorAll('#steps tbody tr')[i];
-                row.querySelectorAll('input')[0].classList.add('error');
-                row.querySelectorAll('input')[2].classList.add('error');
-                ok=false;
-            }
-        });
-
-        if(!ok) toast("Fix highlighted fields");
-        return ok;
     }
 
     function save(){
         const d=collect();
-        if(!validate(d)) return;
 
         fetch('/api/testcases'+(d.id?'/'+d.id:''),{
             method:d.id?'PUT':'POST',
@@ -336,50 +255,60 @@
         addRow();
     }
 
-    function exportCsv(){ window.location='/api/testcases/export'; }
-
-    function browseCsv(){
-        file.click();
-    }
-
-    file.addEventListener('change', ()=>{
-        const selected=file.files[0];
-        selectedFileName.innerText=selected?selected.name:'No file selected';
-        importBtn.disabled=!selected;
-    });
+    /* ================= IMPORT ================= */
 
     function importCsv(){
-        const f=file.files[0];
-        if(!f){
-            toast("Please choose a CSV file first");
-            return;
-        }
+        const f=document.getElementById('file').files[0];
+        if(!f){ toast("Select file"); return; }
 
         const fd=new FormData();
         fd.append('file',f);
 
         fetch('/api/testcases/import',{method:'POST',body:fd})
-            .then(r=>{
-                if(!r.ok) throw new Error('Import failed');
-                return r.json();
-            })
-            .then(d=>{
-                if(!d.length){
-                    toast("No test case found in file");
-                    return;
-                }
+            .then(r=>r.json())
+            .then(res=>{
 
-                const tc=d[0];
-                summary.value=tc.summary;
-                pre.value=tc.precondition;
+                // errors
+                const err=document.getElementById('errors');
+                err.innerHTML='';
+                (res.errors||[]).forEach(e=>{
+                    const li=document.createElement('li');
+                    li.innerText=e;
+                    li.className='error';
+                    err.appendChild(li);
+                });
 
-                document.querySelector('#steps tbody').innerHTML='';
-                tc.steps.filter(s=>s.action||s.expected)
-                    .forEach(s=>addRow(s.action,s.data,s.expected));
+                // preview
+                const prev=document.getElementById('preview');
+                prev.innerHTML='';
 
-                toast("Imported");
-            })
-            .catch(()=>toast("Import failed. Please check the CSV format."));
+                window._imported=res.testCases||[];
+
+                window._imported.forEach((tc,i)=>{
+                    const div=document.createElement('div');
+                    div.className='preview-box';
+                    div.innerHTML=`
+          <b>${tc.summary}</b>
+          <div>${tc.steps.length} steps</div>
+          <button class="secondary" onclick="loadPreview(${i})">Load</button>
+        `;
+                    prev.appendChild(div);
+                });
+
+                toast("Preview ready");
+            });
+    }
+
+    function loadPreview(i){
+        const tc=window._imported[i];
+
+        summary.value=tc.summary;
+        pre.value=tc.precondition;
+
+        document.querySelector('#steps tbody').innerHTML='';
+        tc.steps.forEach(s=>addRow(s.action,s.data,s.expected));
+
+        toast("Loaded preview");
     }
 
     addRow();

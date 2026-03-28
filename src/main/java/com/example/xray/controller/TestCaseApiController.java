@@ -5,7 +5,7 @@ import com.example.xray.service.TestCaseService;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 @RestController
@@ -61,8 +61,8 @@ public class TestCaseApiController {
                 .body(csv);
     }
 
-    @PostMapping("/import")
-    public List<TestCase> importCsv(@RequestParam("file") MultipartFile file) throws Exception {
-        return service.importCsv(file.getInputStream());
+    @PostMapping(value = "/import", consumes = "multipart/form-data")
+    public ImportResult importCsv(@RequestParam("file") MultipartFile file) throws Exception {
+        return service.importCsvWithValidation(file.getInputStream());
     }
 }

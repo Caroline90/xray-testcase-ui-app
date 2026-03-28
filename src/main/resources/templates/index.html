@@ -233,6 +233,7 @@
         <div class="editor-actions">
             <button class="primary" onclick="addRow()">+ Step</button>
             <button class="secondary" onclick="save()">💾 Save</button>
+            <button class="secondary" onclick="downloadCsv()">⬇️ Download CSV</button>
         </div>
 
     </div>
@@ -304,6 +305,26 @@
             body:JSON.stringify(d)
         })
             .then(()=>{ toast("Saved"); load(); resetForm(); });
+    }
+
+    function downloadCsv(){
+        fetch('/api/testcases/export')
+            .then(r=>{
+                if(!r.ok) throw new Error('Export failed');
+                return r.blob();
+            })
+            .then(blob=>{
+                const url=window.URL.createObjectURL(blob);
+                const link=document.createElement('a');
+                link.href=url;
+                link.download='testcases.csv';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+                toast("CSV downloaded");
+            })
+            .catch(()=>toast("CSV export failed"));
     }
 
     function load(){

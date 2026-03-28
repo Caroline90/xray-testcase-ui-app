@@ -1,48 +1,101 @@
 # Xray Testcase UI App
 
-A Spring Boot web application for creating, editing, importing, and exporting **Xray-compatible manual test cases**.
+A Spring Boot web application for managing **Xray-compatible manual test cases** through a browser UI and REST API. It supports end-to-end testcase authoring workflows: create/edit testcases, manage step-by-step actions, import from CSV with validation feedback, and export to CSV for Xray/Jira usage.
 
-## What this app does
+## Features
 
-- Provides a browser-based UI for managing test cases and steps.
-- Stores test cases using Spring Data JPA (with H2 runtime database).
-- Exposes REST APIs to create, update, list, and delete test cases.
-- Imports test cases from CSV and validates import data.
-- Exports test cases into CSV format suitable for Xray/Jira workflows.
-- Includes Swagger/OpenAPI UI support via `springdoc-openapi`.
+- Browser-based testcase editor built with Thymeleaf + vanilla JavaScript.
+- Persistent storage using Spring Data JPA.
+- REST API for CRUD operations on testcases.
+- CSV export in an Xray-oriented format.
+- CSV import endpoint with validation results and preview support.
+- Swagger/OpenAPI integration for API exploration.
 
-## Tech stack
+## Tech Stack
 
-- Java + Spring Boot 3
+- Java 17+
+- Spring Boot 3.2.x
 - Spring Web + Thymeleaf
 - Spring Data JPA
-- H2 database
+- H2 (runtime)
 - OpenCSV
-- JUnit 5 / Spring Boot Test
+- JUnit 5 + Spring Boot Test
 
-## Run locally
+## Prerequisites
+
+- JDK 17 or newer
+- No manual database setup required for local development
+
+## Running Locally
+
+Start the app:
 
 ```bash
 ./gradlew bootRun
 ```
 
-Then open:
+Default URLs (this project is configured for **port 9090**):
 
-- App UI: `http://localhost:8080/`
-- API base: `http://localhost:8080/api/testcases`
-- Swagger UI (if enabled by config): `http://localhost:8080/swagger-ui.html`
+- UI: http://localhost:9090/
+- REST API base: http://localhost:9090/api/testcases
+- Swagger UI: http://localhost:9090/swagger-ui/index.html
 
-## Key API endpoints
-
-- `GET /api/testcases` — list test cases
-- `POST /api/testcases` — create test case
-- `PUT /api/testcases/{id}` — update test case
-- `DELETE /api/testcases/{id}` — delete test case
-- `GET /api/testcases/export` — export CSV
-- `POST /api/testcases/import` — import CSV file (`multipart/form-data`)
-
-## Run tests
+## Running Tests
 
 ```bash
 ./gradlew test
 ```
+
+## API Reference (Core Endpoints)
+
+Base path: `/api/testcases`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/testcases` | List all testcases |
+| POST | `/api/testcases` | Create a testcase |
+| PUT | `/api/testcases/{id}` | Update a testcase |
+| DELETE | `/api/testcases/{id}` | Delete a testcase |
+| GET | `/api/testcases/export` | Export all testcases to CSV |
+| POST | `/api/testcases/import` | Import CSV (`multipart/form-data`, file field: `file`) |
+
+### Create/Update Payload Example
+
+```json
+{
+  "summary": "Verify login with valid credentials",
+  "precondition": "User account exists",
+  "testType": "Manual",
+  "component": "Authentication",
+  "steps": [
+    { "action": "Open login page", "data": "", "expected": "Login page is displayed" },
+    { "action": "Enter valid username and password", "data": "test_user", "expected": "Credentials are accepted" },
+    { "action": "Click Sign In", "data": "", "expected": "Dashboard is displayed" }
+  ]
+}
+```
+
+## CSV Workflow Notes
+
+- **Export:** each testcase is emitted with one or more rows. The first row contains testcase metadata plus first step; subsequent rows contain additional step data.
+- **Import:** send a CSV file to `/api/testcases/import`; the response includes validation status information (`valid`, `errors`, and parsed `preview`).
+
+## Project Structure
+
+```text
+src/main/java/com/example/xray/
+├── controller/   # Web + REST controllers
+├── model/        # JPA entities (TestCase, TestStep)
+├── repository/   # Spring Data repositories
+└── service/      # Business logic + CSV handling
+
+src/main/resources/
+├── templates/    # Thymeleaf UI
+└── application.properties
+```
+
+## Notes
+
+- The UI is intentionally lightweight and server-rendered, with front-end behavior implemented directly in the template.
+- H2 is used as a runtime dependency for quick local startup.
+

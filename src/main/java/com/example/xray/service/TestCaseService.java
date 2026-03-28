@@ -142,7 +142,11 @@ public class TestCaseService {
             }
         }
 
-        result.getTestCases().addAll(map.values());
+        map.values().forEach(tc -> {
+            tc.getSteps().forEach(step -> step.setTestCase(tc));
+            result.getTestCases().add(repo.save(tc));
+        });
+
         return result;
     }
 }

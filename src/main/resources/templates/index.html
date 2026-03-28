@@ -45,7 +45,7 @@
             margin:0 0 14px;
         }
 
-        input, select {
+        input, select, textarea {
             width:100%;
             padding:11px 12px;
             margin-bottom:10px;
@@ -55,7 +55,7 @@
             box-sizing:border-box;
         }
 
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             border-color:#2196F3;
             box-shadow:0 0 0 3px rgba(33,150,243,.15);
             outline:none;
@@ -210,14 +210,19 @@
 
         <input id="id" type="hidden">
         <input id="summary" placeholder="Summary">
-        <input id="pre" placeholder="Precondition">
+        <textarea id="description" rows="3" placeholder="Description"></textarea>
+        <input id="pre" placeholder="Preconditions">
 
         <select id="testType">
             <option>Manual</option>
             <option>Automated</option>
         </select>
 
-        <input id="component" placeholder="Component">
+        <input id="component" placeholder="Components">
+        <input id="affectedVersion" placeholder="Affects Version/s">
+        <input id="fixVersion" placeholder="Fix Version/s">
+        <input id="labels" placeholder="Labels (comma-separated)">
+        <input id="executeIn" placeholder="Execute In (e.g., v1, Regression)">
 
         <div class="table-wrap">
             <table id="steps">
@@ -281,9 +286,14 @@
         return {
             id:id.value||null,
             summary:summary.value,
+            description:description.value,
             precondition:pre.value,
             testType:testType.value,
             component:component.value,
+            affectedVersion:affectedVersion.value,
+            fixVersion:fixVersion.value,
+            labels:labels.value,
+            executeIn:executeIn.value,
             steps:[...document.querySelectorAll('#steps tbody tr')]
                 .map(r=>{
                     const i=r.querySelectorAll('input');
@@ -355,9 +365,14 @@
                 const tc=list.find(x=>x.id===idVal);
                 id.value=tc.id;
                 summary.value=tc.summary;
+                description.value=tc.description || '';
                 pre.value=tc.precondition;
                 testType.value=tc.testType;
                 component.value=tc.component;
+                affectedVersion.value=tc.affectedVersion || '';
+                fixVersion.value=tc.fixVersion || '';
+                labels.value=tc.labels || '';
+                executeIn.value=tc.executeIn || '';
 
                 document.querySelector('#steps tbody').innerHTML='';
                 tc.steps.forEach(s=>addRow(s.action,s.data,s.expected));
@@ -370,7 +385,8 @@
     }
 
     function resetForm(){
-        id.value=''; summary.value=''; pre.value=''; component.value='';
+        id.value=''; summary.value=''; description.value=''; pre.value=''; component.value='';
+        affectedVersion.value=''; fixVersion.value=''; labels.value=''; executeIn.value='';
         document.querySelector('#steps tbody').innerHTML='';
         addRow();
     }
@@ -424,7 +440,13 @@
         const tc=window._imported[i];
 
         summary.value=tc.summary;
+        description.value=tc.description || '';
         pre.value=tc.precondition;
+        component.value=tc.component || '';
+        affectedVersion.value=tc.affectedVersion || '';
+        fixVersion.value=tc.fixVersion || '';
+        labels.value=tc.labels || '';
+        executeIn.value=tc.executeIn || '';
 
         document.querySelector('#steps tbody').innerHTML='';
         tc.steps.forEach(s=>addRow(s.action,s.data,s.expected));

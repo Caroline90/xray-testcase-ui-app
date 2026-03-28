@@ -34,9 +34,14 @@ public class TestCaseApiController {
         TestCase existing = service.find(id);
 
         existing.setSummary(tc.getSummary());
+        existing.setDescription(tc.getDescription());
         existing.setPrecondition(tc.getPrecondition());
         existing.setTestType(tc.getTestType());
         existing.setComponent(tc.getComponent());
+        existing.setAffectedVersion(tc.getAffectedVersion());
+        existing.setLabels(tc.getLabels());
+        existing.setFixVersion(tc.getFixVersion());
+        existing.setExecuteIn(tc.getExecuteIn());
 
         existing.getSteps().clear();
 

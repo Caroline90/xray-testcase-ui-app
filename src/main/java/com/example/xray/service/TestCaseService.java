@@ -46,7 +46,7 @@ public class TestCaseService {
             for (TestStep s : tc.getSteps()) {
                 if (first) {
                     csv.writeNext(new String[]{
-                            String.valueOf(id),"","Test",tc.getSummary(),
+                            String.valueOf(id),tc.getIssueKey(),"Test",tc.getSummary(),
                             tc.getDescription(),tc.getTestType(),tc.getComponent(),tc.getLabels(),
                             tc.getAffectedVersion(),tc.getFixVersion(),tc.getExecuteIn(),
                             s.getAction(),s.getData(),s.getExpected(),
@@ -81,6 +81,7 @@ public class TestCaseService {
 
             TestCase tc = map.computeIfAbsent(id, k -> {
                 TestCase t = new TestCase();
+                t.setIssueKey(r[1]);
                 t.setSummary(r[3]);
                 if (hasExtendedColumns) {
                     t.setDescription(r[4]);
@@ -139,6 +140,7 @@ public class TestCaseService {
 
                 TestCase tc = map.computeIfAbsent(id, k -> {
                     TestCase t = new TestCase();
+                    t.setIssueKey(r[1]);
                     t.setSummary(r[3]);
                     if (hasExtendedColumns) {
                         t.setDescription(r[4]);

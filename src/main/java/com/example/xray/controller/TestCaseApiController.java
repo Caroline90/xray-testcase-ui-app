@@ -1,6 +1,7 @@
 package com.example.xray.controller;
 
 import com.example.xray.model.*;
+import com.example.xray.service.JiraTicketImportService;
 import com.example.xray.service.TestCaseService;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -13,9 +14,11 @@ import java.util.List;
 public class TestCaseApiController {
 
     private final TestCaseService service;
+    private final JiraTicketImportService jiraTicketImportService;
 
-    public TestCaseApiController(TestCaseService service) {
+    public TestCaseApiController(TestCaseService service, JiraTicketImportService jiraTicketImportService) {
         this.service = service;
+        this.jiraTicketImportService = jiraTicketImportService;
     }
 
     @GetMapping
@@ -33,6 +36,7 @@ public class TestCaseApiController {
     public TestCase update(@PathVariable Long id, @RequestBody TestCase tc) {
         TestCase existing = service.find(id);
 
+        existing.setIssueKey(tc.getIssueKey());
         existing.setSummary(tc.getSummary());
         existing.setDescription(tc.getDescription());
         existing.setPrecondition(tc.getPrecondition());
@@ -64,6 +68,11 @@ public class TestCaseApiController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=testcases.csv")
                 .body(csv);
+    }
+
+    @PostMapping("/import-ticket")
+    public TestCase importByTicket(@RequestBody ImportTicketRequest request) {
+        return jiraTicketImportService.importByTicket(request.getTicketKey(), request.getSteps());
     }
 
     @PostMapping(value = "/import", consumes = "multipart/form-data")

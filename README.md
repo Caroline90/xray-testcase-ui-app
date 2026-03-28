@@ -80,6 +80,39 @@ Base path: `/api/testcases`
 - **Export:** each testcase is emitted with one or more rows. The first row contains testcase metadata plus first step; subsequent rows contain additional step data.
 - **Import:** send a CSV file to `/api/testcases/import`; the response includes validation status information (`valid`, `errors`, and parsed `preview`).
 
+
+### Import by Ticket (no full CSV needed)
+
+If you only have step rows and cannot upload a full metadata CSV, you can import testcase metadata directly from Jira/Xray by ticket key, then attach steps in the same request.
+
+1. Configure Jira credentials in `src/main/resources/application.properties` (or environment overrides):
+
+```properties
+jira.base-url=https://your-domain.atlassian.net
+jira.username=you@example.com
+jira.api-token=your_api_token
+```
+
+2. Start the app:
+
+```bash
+./gradlew bootRun
+```
+
+3. (Optional) Create a simple steps CSV file with 3 columns per line: `action,data,expected`
+
+4. Run Gradle task:
+
+```bash
+./gradlew importTicket -PticketKey=TEST-2439 -PstepsFile=./steps.csv
+```
+
+You can also override API URL (default is `http://localhost:9090`):
+
+```bash
+./gradlew importTicket -PticketKey=TEST-2439 -PbaseUrl=http://localhost:9090
+```
+
 ## Project Structure
 
 ```text

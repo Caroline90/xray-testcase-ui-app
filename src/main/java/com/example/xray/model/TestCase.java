@@ -11,6 +11,7 @@ public class TestCase {
     @GeneratedValue
     private Long id;
 
+    private String issueKey;
     private String summary;
     private String description;
     private String precondition;
@@ -30,6 +31,9 @@ public class TestCase {
     }
 
     public Long getId() { return id; }
+
+    public String getIssueKey() { return issueKey; }
+    public void setIssueKey(String issueKey) { this.issueKey = issueKey; }
 
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }

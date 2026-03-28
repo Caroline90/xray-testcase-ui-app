@@ -28,3 +28,25 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+tasks.register("importTicket", JavaExec) {
+    group = "xray"
+    description = "Import a test case from Jira/Xray using a ticket key"
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "com.example.xray.service.TicketImportTask"
+
+    def ticketKey = project.findProperty("ticketKey")
+    if (ticketKey != null) {
+        jvmArgs "-DticketKey=${ticketKey}"
+    }
+
+    def baseUrl = project.findProperty("baseUrl")
+    if (baseUrl != null) {
+        jvmArgs "-DbaseUrl=${baseUrl}"
+    }
+
+    def stepsFile = project.findProperty("stepsFile")
+    if (stepsFile != null) {
+        jvmArgs "-DstepsFile=${stepsFile}"
+    }
+}

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Xray Test Case Builder</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        h2 { margin-top: 0; }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        .secondary { background: #2196F3; }
+        .danger { background: #f44336; }
+        .warning { background: #ff9800; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            background: #2196F3;
+            color: white;
+        }
+
+        td, th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) { background: #f2f2f2; }
+
+        .step-number {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .list-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Test Cases</h2>
+        <button onclick="exportCsv()">Export</button>
+        <input type="file" id="file"/>
+        <button class="secondary" onclick="importCsv()">Import</button>
+    </div>
+
+    <div class="card">
+        <h2>Create / Edit Test Case</h2>
+
+        <input id="id" type="hidden"/>
+
+        <label>Summary</label>
+        <input id="summary"/>
+
+        <label>Precondition</label>
+        <input id="pre"/>
+
+        <label>Test Type</label>
+        <select id="testType">
+            <option>Manual</option>
+            <option>Automated</option>
+        </select>
+
+        <label>Component</label>
+        <input id="component"/>
+
+        <table id="steps">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Action</th>
+                <th>Data</th>
+                <th>Expected</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <br>
+        <button onclick="addRow()">Add Step</button>
+        <button class="secondary" onclick="save()">Save</button>
+        <button class="warning" onclick="resetForm()">Clear</button>
+
+    </div>
+
+    <div class="card">
+        <h2>Saved Test Cases</h2>
+        <div id="list"></div>
+    </div>
+
+</div>
+
+<script>
+    function addRow(a='',d='',e=''){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+        <td class="step-number"></td>
+        <td><input value="${a}"></td>
+        <td><input value="${d}"></td>
+        <td><input value="${e}"></td>
+        <td><button class="danger" onclick="this.closest('tr').remove();update()">X</button></td>`;
+        document.querySelector('#steps tbody').appendChild(tr);
+        update();
+    }
+
+    function update(){
+        document.querySelectorAll('.step-number').forEach((x,i)=>x.innerText=i+1);
+    }
+
+    function collect(){
+        const steps=[...document.querySelectorAll('#steps tbody tr')]
+            .map(r=>{
+                const i=r.querySelectorAll('input');
+                return {
+                    action:i[0].value.trim(),
+                    data:i[1].value.trim(),
+                    expected:i[2].value.trim()
+                };
+            })
+            // ✅ REMOVE EMPTY ROWS
+            .filter(s => s.action || s.expected);
+
+        return {
+            id: document.getElementById('id').value || null,
+            summary: document.getElementById('summary').value,
+            precondition: document.getElementById('pre').value,
+            testType: document.getElementById('testType').value,
+            component: document.getElementById('component').value,
+            steps: steps
+        };
+    }
+
+    function validate(d){
+        if(!d.summary){
+            alert("Summary required");
+            return false;
+        }
+
+        if(d.steps.length === 0){
+            alert("At least one step required");
+            return false;
+        }
+
+        return true;
+    }
+
+    function save(){
+        const d=collect();
+        if(!validate(d)) return;
+
+        fetch('/api/testcases'+(d.id?'/'+d.id:''),{
+            method:d.id?'PUT':'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(d)
+        }).then(()=>load());
+    }
+
+    function load(){
+        fetch('/api/testcases')
+            .then(r=>r.json())
+            .then(list=>{
+                const container=document.getElementById('list');
+                container.innerHTML='';
+
+                list.forEach(tc=>{
+                    const div=document.createElement('div');
+                    div.className='list-item';
+                    div.innerHTML=`
+                    <b>${tc.summary}</b>
+                    (${tc.steps.length} steps)
+                    <button class="secondary" onclick="edit(${tc.id})">Edit</button>
+                    <button class="danger" onclick="del(${tc.id})">Delete</button>
+                `;
+                    container.appendChild(div);
+                });
+            });
+    }
+
+    function edit(id){
+        fetch('/api/testcases')
+            .then(r=>r.json())
+            .then(list=>{
+                const tc=list.find(x=>x.id===id);
+
+                document.getElementById('id').value=tc.id;
+                document.getElementById('summary').value=tc.summary;
+                document.getElementById('pre').value=tc.precondition;
+                document.getElementById('testType').value=tc.testType;
+                document.getElementById('component').value=tc.component;
+
+                document.querySelector('#steps tbody').innerHTML='';
+
+                tc.steps.forEach(s=>addRow(s.action,s.data,s.expected));
+            });
+    }
+
+    function del(id){
+        fetch('/api/testcases/'+id,{method:'DELETE'})
+            .then(()=>load());
+    }
+
+    function resetForm(){
+        document.getElementById('id').value='';
+        document.getElementById('summary').value='';
+        document.getElementById('pre').value='';
+        document.getElementById('component').value='';
+
+        document.querySelector('#steps tbody').innerHTML='';
+        addRow();
+    }
+
+    function exportCsv(){
+        window.location='/api/testcases/export';
+    }
+
+    function importCsv(){
+        const f=document.getElementById('file').files[0];
+        const fd=new FormData();
+        fd.append('file',f);
+
+        fetch('/api/testcases/import',{method:'POST',body:fd})
+            .then(r=>r.json())
+            .then(d=>{
+                const tc=d[0];
+
+                document.getElementById('summary').value=tc.summary;
+                document.getElementById('pre').value=tc.precondition;
+
+                const tbody = document.querySelector('#steps tbody');
+                tbody.innerHTML='';
+
+                // ✅ only add non-empty steps
+                tc.steps
+                    .filter(s => s.action || s.expected)
+                    .forEach(s=>addRow(s.action,s.data,s.expected));
+            });
+    }
+
+    addRow();
+    load();
+</script>
+
+</body>
+</html>
